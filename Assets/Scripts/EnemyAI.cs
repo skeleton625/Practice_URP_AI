@@ -19,6 +19,7 @@ public class EnemyAI : MonoBehaviour
 
     private float preRoamTimer = 0f;
     private float fullRoamTimer = 0f;
+    private Vector3 startPosition = Vector3.zero;
 
     private State enemyState = State.Roaming;
     private NavMeshAgent enemyAgent = null;
@@ -52,25 +53,28 @@ public class EnemyAI : MonoBehaviour
 
     private void OnEnable()
     {
-        InitializeEnemy();
+        InitializeEnemy(transform.position);
     }
 
-    private void InitializeEnemy()
+    private void InitializeEnemy(Vector3 startPosition)
     {
         enemyAgent.speed = MoveSpeed;
         searchRadiusX2 = SearchRadius * SearchRadius;
         escapeRadiusX2 = EscapeRadius * EscapeRadius;
         attackRadiusX2 = AttackRadius * AttackRadius;
 
+        this.startPosition = startPosition;
+
         enemyState = State.Roaming;
         ChangeStateColor(enemyState);
-        InitializeTimer();
+        InitializeRoaming();
     }
 
-    private void InitializeTimer()
+    private void InitializeRoaming()
     {
         preRoamTimer = 0f;
         fullRoamTimer = Random.Range(RoamTimer - 5f, RoamTimer + 5f);
+        MovePosition(startPosition + Random.insideUnitSphere * RoamRadius);
     }
     #endregion
 
@@ -84,23 +88,22 @@ public class EnemyAI : MonoBehaviour
                 if (preRoamTimer < fullRoamTimer)
                     preRoamTimer += Time.deltaTime;
                 else
-                {
-                    MovePosition(transform.position + Random.insideUnitSphere * RoamRadius);
-                    InitializeTimer();
-                }
+                    InitializeRoaming();
                 FindTarget();
                 break;
             case State.Chasing:
-                MovePosition(Player.Instance.Position);
-
-                if ((transform.position - Player.Instance.Position).sqrMagnitude < attackRadiusX2)
+                if (ChaseTarget())
                 {
-                    enemyState = State.Attack;
-                    enemyAgent.isStopped = true;
-                    ChangeStateColor(enemyState);
-                    preAttackTimer = 0;
+                    MovePosition(Player.Instance.Position);
+
+                    if ((transform.position - Player.Instance.Position).sqrMagnitude < attackRadiusX2)
+                    {
+                        enemyState = State.Attack;
+                        enemyAgent.isStopped = true;
+                        ChangeStateColor(enemyState);
+                        preAttackTimer = 0;
+                    }
                 }
-                LostTarget();
                 break;
             case State.Attack:
                 if (preAttackTimer < AttackTimer)
@@ -152,14 +155,16 @@ public class EnemyAI : MonoBehaviour
         }
     }
 
-    private void LostTarget()
+    private bool ChaseTarget()
     {
         if ((transform.position - Player.Instance.Position).sqrMagnitude > escapeRadiusX2)
         {
             enemyState = State.Roaming;
             ChangeStateColor(enemyState);
-            InitializeTimer();
+            InitializeRoaming();
+            return false;
         }
+        return true;
     }
     #endregion
 
