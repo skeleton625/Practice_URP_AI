@@ -32,10 +32,9 @@ public class Player: MonoBehaviour
         if (Input.GetKeyDown(KeyCode.LeftShift)) moveScale = RunScale;
         if (Input.GetKeyUp(KeyCode.LeftShift)) moveScale = WalkScale;
 
-        var horizontal = Input.GetAxis("Horizontal") * Time.deltaTime * moveScale;
-        var vertical = Input.GetAxis("Vertical") * Time.deltaTime * moveScale;
-        var rotate = Input.GetAxis("Mouse X") * Time.deltaTime * RotateScale;
-
+        var horizontal = Input.GetAxis("Horizontal") * moveScale;
+        var vertical = Input.GetAxis("Vertical") * moveScale;
+        var rotate = Input.GetAxis("Mouse X") * RotateScale;
         transform.Rotate(0, rotate, 0);
 
         var forward = transform.forward * vertical;
